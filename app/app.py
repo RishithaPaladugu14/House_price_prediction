@@ -36,7 +36,6 @@ def predict():
         resale = float(request.form['resale'])
         rera = float(request.form['rera'])
 
-        # Input order must match training data
         features = [[size, bhk, under_construction, ready_to_move, resale, rera]]
 
         output = model.predict(features)[0]
@@ -47,7 +46,7 @@ def predict():
 
 
 # --------------------------------------------------------
-#  NOTE:
-#  DO NOT WRITE app.run() HERE.
-#  GUNICORN (IN PROCFILE) WILL RUN THIS FILE.
+#  LOCAL RUN ONLY
 # --------------------------------------------------------
+if __name__ == "__main__":
+    app.run(debug=True)
