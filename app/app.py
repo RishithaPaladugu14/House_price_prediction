@@ -1,39 +1,53 @@
-from flask import Flask, request, render_template
+from flask import Flask, render_template, request
 import pickle
 import pandas as pd
+import os
 
 app = Flask(__name__)
-model = pickle.load(open("../models/model.pkl", "rb"))
+
+# --------------------------------------------------------
+#  LOAD MODEL USING ABSOLUTE PATH (WORKS ON RAILWAY)
+# --------------------------------------------------------
+model_path = os.path.join(os.path.dirname(__file__), "..", "models", "model.pkl")
+model_path = os.path.abspath(model_path)
+
+model = pickle.load(open(model_path, "rb"))
+
+# --------------------------------------------------------
+#  HOME PAGE
+# --------------------------------------------------------
+@app.route('/')
+def home():
+    return render_template('index.html')
 
 
-@app.route("/", methods=["GET", "POST"])
+# --------------------------------------------------------
+#  PREDICTION ROUTE
+# --------------------------------------------------------
+@app.route('/predict', methods=['POST'])
 def predict():
+
     if request.method == "POST":
-        size = float(request.form["size"])
-        bhk = int(request.form["bhk"])
-        under_construction = int(request.form["under_construction"])
-        ready_to_move = int(request.form["ready_to_move"])
-        resale = int(request.form["resale"])
-        rera = int(request.form["rera"])
-        
-        # Create input DataFrame with required features
-        input_data = {
-            "UNDER_CONSTRUCTION": [under_construction],
-            "RERA": [rera],
-            "BHK_NO.": [bhk],
-            "size": [size],
-            "READY_TO_MOVE": [ready_to_move],
-            "RESALE": [resale],
-            "LONGITUDE": [0],  # Using default values for location
-            "LATITUDE": [0]    # Using default values for location
-        }
 
-        df = pd.DataFrame(input_data)
-        prediction = model.predict(df)[0]
+        size = float(request.form['size'])
+        bhk = float(request.form['bhk'])
+        under_construction = float(request.form['under_construction'])
+        ready_to_move = float(request.form['ready_to_move'])
+        resale = float(request.form['resale'])
+        rera = float(request.form['rera'])
 
-        return render_template("result.html", price=round(prediction, 2))
-    return render_template("form.html")
+        # Input order must match training data
+        features = [[size, bhk, under_construction, ready_to_move, resale, rera]]
+
+        output = model.predict(features)[0]
+
+        return render_template('index.html', prediction_text=f"Predicted House Price: ₹ {round(output, 2)}")
+
+    return render_template('index.html')
 
 
-if __name__ == "__main__":
-    app.run(debug=True)
+# --------------------------------------------------------
+#  NOTE:
+#  DO NOT WRITE app.run() HERE.
+#  GUNICORN (IN PROCFILE) WILL RUN THIS FILE.
+# --------------------------------------------------------
